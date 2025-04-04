@@ -1,8 +1,11 @@
-﻿//class Program
-//{
-//    static void Main(string[] args)
-//    {
-//        Game game = new Game();
-//        game.Start();
-//    }
-//}
+﻿
+using discotext;
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        var game = new Game();
+        game.Run();
+    }
+}
