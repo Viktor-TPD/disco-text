@@ -15,6 +15,7 @@ namespace discotext.Models
         public string Description { get; set; }
         public bool CanTake { get; set; }
         public ItemType Type { get; set; }
+        public bool IsOn { get; set; } = true; // For ceiling fan
         public Dictionary<string, string> InteractionResponses { get; set; }
         public List<DialogueOption> DialogueOptions { get; set; }
         public bool HasDialogueChoices => DialogueOptions != null && DialogueOptions.Count > 0;
@@ -64,7 +65,7 @@ namespace discotext.Models
             items.Add("sink", CreateSink());
             items.Add("window", CreateWindow());
             items.Add("ledger", CreateLedger());
-            items.Add("ceiling_fan", CreateCeilingFan());
+            items.Add("ceiling fan", CreateCeilingFan());
             
             return items;
         }
@@ -150,7 +151,7 @@ namespace discotext.Models
 
         private Item CreateCeilingFan()
         {
-            var ceilingFan = new Item("ceiling-fan", "An old ceiling fan spinning slowly. It creaks with each rotation.", false);
+            var ceilingFan = new Item("ceiling fan", "An old ceiling fan spinning slowly. It creaks with each rotation.", false);
             ceilingFan.DialogueOptions.Add(new DialogueOption(
                 "Try to jump and grab it", 
                 "You leap upward, but the fan is too high. Your headache worsens with the sudden movement.",
@@ -168,6 +169,27 @@ namespace discotext.Models
                 "Look for the switch to turn it off", 
                 "You spot a pull-chain, but it's broken. The fan seems destined to keep spinning, much like your thoughts.",
                 null
+            ));
+            ceilingFan.DialogueOptions.Add(new DialogueOption(
+                "Try to turn it off", 
+                "You reach up and pull the chain. After a few stuttering rotations, the fan comes to a stop.",
+                () => { 
+                    ceilingFan.IsOn = false;
+                    ceilingFan.Description = "An old ceiling fan, now motionless. A pull chain dangles below it.";
+                    // Add a new dialogue option to turn it back on
+                    ceilingFan.DialogueOptions.Add(new DialogueOption(
+                        "Turn it back on",
+                        "You pull the chain again. The fan reluctantly starts spinning with a creaking sound.",
+                        () => {
+                            ceilingFan.IsOn = true;
+                            ceilingFan.Description = "An old ceiling fan spinning slowly. It creaks with each rotation.";
+                            // Remove the "Turn it back on" option (last option added)
+                            ceilingFan.DialogueOptions.RemoveAt(ceilingFan.DialogueOptions.Count - 1);
+                        }
+                    ));
+                    // Optional: Remove the "Turn it off" option if you don't want it to appear again
+                    ceilingFan.DialogueOptions.Remove(ceilingFan.DialogueOptions.First(o => o.Text == "Try to turn it off"));
+                }
             ));
             return ceilingFan;
         }

@@ -54,7 +54,7 @@ namespace discotext.Models
             bathroom.Items.Add(_allItems["sink"]);
             nearWindow.Items.Add(_allItems["window"]);
             centerOfRoom.Items.Add(_allItems["ledger"]);
-            centerOfRoom.Items.Add(_allItems["ceiling_fan"]);
+            centerOfRoom.Items.Add(_allItems["ceiling fan"]);
 
             var locations = new Dictionary<string, Location>
             {

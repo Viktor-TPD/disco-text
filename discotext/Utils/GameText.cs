@@ -57,6 +57,7 @@ public class GameText
                 Console.WriteLine($": {item.Description}");
             }
         }
+
         Console.WriteLine();
     }
 
@@ -64,7 +65,7 @@ public class GameText
     {
         Console.WriteLine(message);
     }
-    
+
     public void DisplayPlayerStatus(Player player)
     {
         Console.WriteLine();
@@ -75,7 +76,7 @@ public class GameText
         Console.WriteLine($"Morale: {GetStatusBar(player.Morale, 5)}");
         Console.WriteLine();
     }
-    
+
     private string GetStatusBar(int value, int max)
     {
         string bar = "[";
@@ -83,17 +84,18 @@ public class GameText
         {
             bar += i < value ? "■" : "□";
         }
+
         bar += "]";
         return bar;
     }
-    
-    public void DisplayDialogueOptions(Item item, int selectedIndex)
+
+    public void DisplayDialogueOptions(Item item, int selectedIndex, bool showExitOption = false)
     {
         Console.Clear();
         Console.WriteLine(item.Description);
         Console.WriteLine();
         Console.WriteLine("Choose an option:");
-        
+
         for (int i = 0; i < item.DialogueOptions.Count; i++)
         {
             if (i == selectedIndex)
@@ -106,8 +108,25 @@ public class GameText
                 Console.ResetColor();
                 Console.Write("  ");
             }
-            
+
             Console.WriteLine(item.DialogueOptions[i].Text);
+            Console.ResetColor();
+        }
+
+        if (showExitOption)
+        {
+            if (selectedIndex == item.DialogueOptions.Count)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.Write("> ");
+            }
+            else
+            {
+                Console.ResetColor();
+                Console.Write("  ");
+            }
+
+            Console.WriteLine("Stop examining");
             Console.ResetColor();
         }
     }

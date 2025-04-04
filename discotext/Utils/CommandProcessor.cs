@@ -35,14 +35,22 @@ public class CommandProcessor
             case "examine":
             case "inspect":
                 if (parts.Length > 1)
-                    Examine(parts[1]);
+                {
+                    string itemName = string.Join(" ", parts.Skip(1));
+                    Examine(itemName);
+                }
                 else
                     _gameText.DisplayMessage("Examine what?");
+
                 break;
             case "take":
             case "grab":
                 if (parts.Length > 1)
-                    Take(parts[1]);
+                {
+                    string itemName = string.Join(" ", parts.Skip(1));
+                    Take(itemName);
+                }
+
                 else
                     _gameText.DisplayMessage("Take what?");
                 break;
@@ -52,7 +60,10 @@ public class CommandProcessor
                 break;
             case "use":
                 if (parts.Length > 1)
-                    Use(parts[1]);
+                {
+                    string itemName = string.Join(" ", parts.Skip(1));
+                    Use(itemName);
+                }
                 else
                     _gameText.DisplayMessage("Use what?");
                 break;
@@ -103,6 +114,7 @@ public class CommandProcessor
             {
                 _gameText.DisplayMessage(inventoryItem.Description);
             }
+
             return;
         }
 
@@ -111,7 +123,7 @@ public class CommandProcessor
         {
             if (locationItem.HasDialogueChoices)
             {
-                HandleDialogueOptions(locationItem);
+                _game.GetDialogueHandler().HandleDialogue(locationItem, () => Look());
             }
             else if (locationItem.InteractionResponses.ContainsKey("examine"))
             {
@@ -127,7 +139,7 @@ public class CommandProcessor
             _gameText.DisplayMessage($"You don't see a {itemName} here.");
         }
     }
-        
+
     private void HandleDialogueOptions(Item item)
     {
         int selectedIndex = 0;
@@ -141,12 +153,14 @@ public class CommandProcessor
             switch (key)
             {
                 case ConsoleKey.UpArrow:
+                case ConsoleKey.W:
                     selectedIndex = Math.Max(0, selectedIndex - 1);
                     break;
                 case ConsoleKey.DownArrow:
+                case ConsoleKey.S:
                     selectedIndex = Math.Min(item.DialogueOptions.Count - 1, selectedIndex + 1);
                     break;
-                case ConsoleKey.Enter:
+                case ConsoleKey.Enter: 
                     optionSelected = true;
                     break;
             }
