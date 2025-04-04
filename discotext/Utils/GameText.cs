@@ -1,3 +1,4 @@
+using discotext.Models;
 namespace discotext.Utils;
 
 public class GameText
@@ -29,11 +30,6 @@ public class GameText
         Console.WriteLine();
     }
 
-    public void DisplayMessage(string message)
-    {
-        Console.WriteLine(message);
-    }
-
     public void DisplayLocationDescription(Location location)
     {
         Console.WriteLine();
@@ -42,7 +38,6 @@ public class GameText
         Console.ResetColor();
         Console.WriteLine(location.Description);
 
-        // Show available exits
         if (location.Exits.Count > 0)
         {
             Console.Write("You can go: ");
@@ -51,7 +46,6 @@ public class GameText
             Console.ResetColor();
         }
 
-        // Show visible items
         if (location.Items.Count > 0)
         {
             Console.WriteLine("You see:");
@@ -64,5 +58,57 @@ public class GameText
             }
         }
         Console.WriteLine();
+    }
+
+    public void DisplayMessage(string message)
+    {
+        Console.WriteLine(message);
+    }
+    
+    public void DisplayPlayerStatus(Player player)
+    {
+        Console.WriteLine();
+        Console.ForegroundColor = ConsoleColor.Magenta;
+        Console.WriteLine("STATUS");
+        Console.ResetColor();
+        Console.WriteLine($"Health: {GetStatusBar(player.Health, 5)}");
+        Console.WriteLine($"Morale: {GetStatusBar(player.Morale, 5)}");
+        Console.WriteLine();
+    }
+    
+    private string GetStatusBar(int value, int max)
+    {
+        string bar = "[";
+        for (int i = 0; i < max; i++)
+        {
+            bar += i < value ? "■" : "□";
+        }
+        bar += "]";
+        return bar;
+    }
+    
+    public void DisplayDialogueOptions(Item item, int selectedIndex)
+    {
+        Console.Clear();
+        Console.WriteLine(item.Description);
+        Console.WriteLine();
+        Console.WriteLine("Choose an option:");
+        
+        for (int i = 0; i < item.DialogueOptions.Count; i++)
+        {
+            if (i == selectedIndex)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.Write("> ");
+            }
+            else
+            {
+                Console.ResetColor();
+                Console.Write("  ");
+            }
+            
+            Console.WriteLine(item.DialogueOptions[i].Text);
+            Console.ResetColor();
+        }
     }
 }

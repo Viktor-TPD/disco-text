@@ -1,8 +1,7 @@
-using System.Reflection.Metadata.Ecma335;
-using discotext.Utils;
+using discotext.Core;
+using discotext.Models;
 
-namespace discotext;
-
+namespace discotext.Utils;
 public class CommandProcessor
 {
     private Game _game;
@@ -20,7 +19,7 @@ public class CommandProcessor
     {
         var parts = input.Split(' ');
         var command = parts[0];
-        
+
         switch (command)
         {
             case "look":
@@ -57,6 +56,9 @@ public class CommandProcessor
                 else
                     _gameText.DisplayMessage("Use what?");
                 break;
+            case "status":
+                _gameText.DisplayPlayerStatus(_player);
+                break;
             case "help":
                 ShowHelp();
                 break;
@@ -89,18 +91,77 @@ public class CommandProcessor
         var inventoryItem = _player.Inventory.FirstOrDefault(i => i.Name.ToLower() == itemName.ToLower());
         if (inventoryItem != null)
         {
-            _gameText.DisplayMessage(inventoryItem.InteractionResponses["examine"]);
+            if (inventoryItem.HasDialogueChoices)
+            {
+                HandleDialogueOptions(inventoryItem);
+            }
+            else if (inventoryItem.InteractionResponses.ContainsKey("examine"))
+            {
+                _gameText.DisplayMessage(inventoryItem.InteractionResponses["examine"]);
+            }
+            else
+            {
+                _gameText.DisplayMessage(inventoryItem.Description);
+            }
+            return;
+        }
+
+        var locationItem = _player.CurrentLocation.Items.FirstOrDefault(i => i.Name.ToLower() == itemName.ToLower());
+        if (locationItem != null)
+        {
+            if (locationItem.HasDialogueChoices)
+            {
+                HandleDialogueOptions(locationItem);
+            }
+            else if (locationItem.InteractionResponses.ContainsKey("examine"))
+            {
+                _gameText.DisplayMessage(locationItem.InteractionResponses["examine"]);
+            }
+            else
+            {
+                _gameText.DisplayMessage(locationItem.Description);
+            }
         }
         else
         {
-            _gameText.DisplayMessage(inventoryItem.Description);
+            _gameText.DisplayMessage($"You don't see a {itemName} here.");
         }
-        return;
+    }
+        
+    private void HandleDialogueOptions(Item item)
+    {
+        int selectedIndex = 0;
+        bool optionSelected = false;
+            
+        while (!optionSelected)
+        {
+            _gameText.DisplayDialogueOptions(item, selectedIndex);
+                
+            var key = Console.ReadKey(true).Key;
+            switch (key)
+            {
+                case ConsoleKey.UpArrow:
+                    selectedIndex = Math.Max(0, selectedIndex - 1);
+                    break;
+                case ConsoleKey.DownArrow:
+                    selectedIndex = Math.Min(item.DialogueOptions.Count - 1, selectedIndex + 1);
+                    break;
+                case ConsoleKey.Enter:
+                    optionSelected = true;
+                    break;
+            }
+        }
+            
+        DialogueOption selectedOption = item.DialogueOptions[selectedIndex];
+        Console.Clear();
+        _gameText.DisplayMessage(selectedOption.Response);
+            
+        selectedOption.Effect?.Invoke();
     }
 
     private void Take(string itemName)
     {
-        var item = _player.Inventory.FirstOrDefault(i => i.Name.ToLower() == itemName.ToLower());
+        var item = _player.CurrentLocation.Items.FirstOrDefault(i => i.Name.ToLower() == itemName.ToLower());
         if (item != null)
         {
             if (item.CanTake)
@@ -111,19 +172,19 @@ public class CommandProcessor
                 }
                 else
                 {
-                    _gameText.DisplayMessage($"You take the {item.Name}");
+                    _gameText.DisplayMessage($"You take the {item.Name}.");
                 }
                 _player.Inventory.Add(item);
                 _player.CurrentLocation.Items.Remove(item);
             }
             else
             {
-                _gameText.DisplayMessage($"You can't take the {item.Name}");
+                _gameText.DisplayMessage($"You can't take the {item.Name}.");
             }
         }
         else
         {
-            _gameText.DisplayMessage($"You can't see any {itemName} here.");
+            _gameText.DisplayMessage($"You don't see a {itemName} here.");
         }
     }
 
@@ -135,7 +196,7 @@ public class CommandProcessor
             return;
         }
 
-        _gameText.DisplayMessage("You're carrying: ");
+        _gameText.DisplayMessage("You are carrying:");
         foreach (var item in _player.Inventory)
         {
             _gameText.DisplayMessage($"- {item.Name}: {item.Description}");
@@ -153,12 +214,11 @@ public class CommandProcessor
             }
             else
             {
-                _gameText.DisplayMessage($"You're not sure how to use {inventoryItem.Name}");
+                _gameText.DisplayMessage($"You're not sure how to use the {inventoryItem.Name}.");
             }
-
             return;
         }
-    
+
         var locationItem = _player.CurrentLocation.Items.FirstOrDefault(i => i.Name.ToLower() == itemName.ToLower());
         if (locationItem != null)
         {
@@ -168,11 +228,15 @@ public class CommandProcessor
             }
             else
             {
-                _gameText.DisplayMessage($"You're not sure how to use {locationItem.Name}");
+                _gameText.DisplayMessage($"You're not sure how to use the {locationItem.Name}.");
             }
         }
-    
+        else
+        {
+            _gameText.DisplayMessage($"You don't see a {itemName} here.");
+        }
     }
+
     private void ShowHelp()
     {
         _gameText.DisplayMessage("Available commands:");
@@ -182,8 +246,8 @@ public class CommandProcessor
         _gameText.DisplayMessage("- take [item]: Pick up an item");
         _gameText.DisplayMessage("- inventory: See what you're carrying");
         _gameText.DisplayMessage("- use [item]: Use or interact with an item");
+        _gameText.DisplayMessage("- status: Check your health and morale");
         _gameText.DisplayMessage("- help: Show this help message");
         _gameText.DisplayMessage("- quit: End the game");
     }
-
 }

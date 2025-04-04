@@ -1,11 +1,9 @@
-﻿
-using discotext;
-
+﻿using discotext.Core;
 class Program
 {
     static void Main(string[] args)
     {
         var game = new Game();
-        game.Run();
+        game.Start();
     }
 }
