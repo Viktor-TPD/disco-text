@@ -17,16 +17,15 @@ public class DialogueHandler
             _gameText.DisplayMessage(item.Description);
             return;
         }
-            
+    
         int selectedIndex = 0;
-        bool optionSelected = false;
-        
+        bool exitDialogue = false;
         int totalOptions = item.DialogueOptions.Count + 1;
-            
-        while (!optionSelected)
+    
+        while (!exitDialogue)
         {
             _gameText.DisplayDialogueOptions(item, selectedIndex, true);
-                
+        
             var key = Console.ReadKey(true).Key;
             switch (key)
             {
@@ -37,23 +36,26 @@ public class DialogueHandler
                     selectedIndex = (selectedIndex + 1) % totalOptions;
                     break;
                 case ConsoleKey.Enter:
-                    optionSelected = true;
+                    if (selectedIndex == item.DialogueOptions.Count)
+                    {
+                        exitDialogue = true;
+                        Console.Clear();
+                        _gameText.DisplayMessage("You stop examining the " + item.Name + ".");
+                        onExit?.Invoke();
+                    }
+                    else
+                    {
+                        DialogueOption selectedOption = item.DialogueOptions[selectedIndex];
+                        Console.Clear();
+                        _gameText.DisplayMessage(selectedOption.Response);
+                        selectedOption.Effect?.Invoke();
+                        
+                        _gameText.DisplayMessage("\nPress any key to continue...");
+                        Console.ReadKey(true);
+                        Console.Clear();
+                    }
                     break;
             }
-        }
-
-        if (selectedIndex == item.DialogueOptions.Count)
-        {
-            Console.Clear();
-            _gameText.DisplayMessage("You stop examining the " + item.Name + ".");
-            onExit?.Invoke();
-        }
-        else
-        {
-            DialogueOption selectedOption = item.DialogueOptions[selectedIndex];
-            Console.Clear();
-            _gameText.DisplayMessage(selectedOption.Response);
-            selectedOption.Effect?.Invoke();
         }
     }
 }

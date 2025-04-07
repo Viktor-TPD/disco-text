@@ -176,36 +176,44 @@ public class CommandProcessor
     private void HandleDialogueOptions(Item item)
     {
         int selectedIndex = 0;
-        bool optionSelected = false;
-            
-        while (!optionSelected)
+        bool exitDialogue = false;
+        int totalOptions = item.DialogueOptions.Count + 1; // +1 for exit option
+    
+        while (!exitDialogue)
         {
-            _gameText.DisplayDialogueOptions(item, selectedIndex);
-                
+            _gameText.DisplayInventoryDialogueOptions(item, selectedIndex);
+        
             var key = Console.ReadKey(true).Key;
             switch (key)
             {
                 case ConsoleKey.UpArrow:
                 case ConsoleKey.W:
-                    selectedIndex = Math.Max(0, selectedIndex - 1);
+                    selectedIndex = (selectedIndex - 1 + totalOptions) % totalOptions;
                     break;
                 case ConsoleKey.DownArrow:
                 case ConsoleKey.S:
-                    selectedIndex = Math.Min(item.DialogueOptions.Count - 1, selectedIndex + 1);
+                    selectedIndex = (selectedIndex + 1) % totalOptions;
                     break;
-                case ConsoleKey.Enter: 
-                    optionSelected = true;
+                case ConsoleKey.Enter:
+                    if (selectedIndex == item.DialogueOptions.Count)
+                    {
+                        exitDialogue = true;
+                    }
+                    else
+                    {
+                        DialogueOption selectedOption = item.DialogueOptions[selectedIndex];
+                        Console.Clear();
+                        _gameText.DisplayMessage(selectedOption.Response);
+                        selectedOption.Effect?.Invoke();
+                    
+                        _gameText.DisplayMessage("\nPress any key to continue...");
+                        Console.ReadKey(true);
+                        Console.Clear();
+                    }
                     break;
             }
         }
-            
-        DialogueOption selectedOption = item.DialogueOptions[selectedIndex];
-        Console.Clear();
-        _gameText.DisplayMessage(selectedOption.Response);
-            
-        selectedOption.Effect?.Invoke();
-    }
-
+    } 
     private void Take(string itemName)
     {
         var locationItems = _player.CurrentLocation.Items;

@@ -154,4 +154,43 @@ public class GameText
             Console.ResetColor();
         }
     }
+    
+    public void DisplayInventoryDialogueOptions(Item item, int selectedIndex)
+    {
+        Console.Clear();
+        Console.WriteLine(item.Description);
+        Console.WriteLine();
+        Console.WriteLine("Choose an option:");
+
+        for (int i = 0; i < item.DialogueOptions.Count; i++)
+        {
+            if (i == selectedIndex)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.Write("> ");
+            }
+            else
+            {
+                Console.ResetColor();
+                Console.Write("  ");
+            }
+
+            Console.WriteLine(item.DialogueOptions[i].Text);
+            Console.ResetColor();
+        }
+    
+        if (selectedIndex == item.DialogueOptions.Count)
+        {
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.Write("> ");
+        }
+        else
+        {
+            Console.ResetColor();
+            Console.Write("  ");
+        }
+    
+        Console.WriteLine("Exit dialogue");
+        Console.ResetColor();
+    } 
 }
