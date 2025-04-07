@@ -7,20 +7,41 @@ public class CommandProcessor
     private Game _game;
     private Player _player;
     private GameText _gameText;
-
+    private CommandMatcher _commandMatcher;
+    private ItemMatcher _itemMatcher;
+    
     public CommandProcessor(Game game)
     {
         _game = game;
         _player = game.GetPlayer();
         _gameText = game.GetGameText();
+        _commandMatcher = new CommandMatcher(_gameText);
+        _itemMatcher = new ItemMatcher(_gameText);
     }
 
     public void ProcessCommand(string input)
     {
-        var parts = input.Split(' ');
-        var command = parts[0];
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            _gameText.DisplayMessage("Please enter a command.");
+            return;
+        }
 
-        switch (command)
+        var parts = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0)
+        {
+            _gameText.DisplayMessage("Please enter a command.");
+            return;
+        }
+
+        string matchedCommand = _commandMatcher.MatchCommand(parts[0]);
+        
+        if (matchedCommand == null)
+        {
+            _gameText.DisplayMessage($"I don't understand '{parts[0]}'. Type 'help' for a list of commands.");
+            return;
+        }
+        switch (matchedCommand)
         {
             case "look":
                 Look();
@@ -28,7 +49,7 @@ public class CommandProcessor
             case "go":
             case "move":
                 if (parts.Length > 1)
-                    Move(parts[1]);
+                    Move(string.Join(" ", parts.Skip(1)));
                 else
                     _gameText.DisplayMessage("Go where?");
                 break;
@@ -90,53 +111,65 @@ public class CommandProcessor
         {
             _player.CurrentLocation = _player.CurrentLocation.Exits[direction];
             _gameText.DisplayLocationDescription(_player.CurrentLocation);
+            return;
         }
-        else
+    
+        var availableExits = _player.CurrentLocation.Exits.Keys.ToList();
+    
+        var bestMatches = new List<(string Exit, int Distance)>();
+        foreach (var exit in availableExits)
         {
-            _gameText.DisplayMessage($"You can't go {direction} from here.");
+            int distance = TextMatching.LevenshteinDistance(direction.ToLower(), exit.ToLower());
+            if (distance <= 2)
+                bestMatches.Add((exit, distance));
         }
+    
+        if (bestMatches.Count > 0)
+        {
+            var bestMatch = bestMatches.OrderBy(m => m.Distance).First();
+            _gameText.DisplayMessage($"I understand you want to go {bestMatch.Exit}.");
+            _player.CurrentLocation = _player.CurrentLocation.Exits[bestMatch.Exit];
+            _gameText.DisplayLocationDescription(_player.CurrentLocation);
+            return;
+        }
+    
+        _gameText.DisplayMessage($"You can't go {direction} from here.");
     }
 
     private void Examine(string itemName)
     {
-        var inventoryItem = _player.Inventory.FirstOrDefault(i => i.Name.ToLower() == itemName.ToLower());
-        if (inventoryItem != null)
-        {
-            if (inventoryItem.HasDialogueChoices)
-            {
-                HandleDialogueOptions(inventoryItem);
-            }
-            else if (inventoryItem.InteractionResponses.ContainsKey("examine"))
-            {
-                _gameText.DisplayMessage(inventoryItem.InteractionResponses["examine"]);
-            }
-            else
-            {
-                _gameText.DisplayMessage(inventoryItem.Description);
-            }
+        var availableItems = _player.Inventory
+            .Concat(_player.CurrentLocation.Items)
+            .ToList();
 
+        var matchedItem = _itemMatcher.MatchItem(itemName, availableItems);
+
+        if (matchedItem == null)
+        {
+            _gameText.DisplayMessage($"You don't see a {itemName} here.");
             return;
         }
 
-        var locationItem = _player.CurrentLocation.Items.FirstOrDefault(i => i.Name.ToLower() == itemName.ToLower());
-        if (locationItem != null)
+        var inventoryItem = _player.Inventory.Contains(matchedItem);
+
+        if (matchedItem.HasDialogueChoices)
         {
-            if (locationItem.HasDialogueChoices)
+            if (inventoryItem)
             {
-                _game.GetDialogueHandler().HandleDialogue(locationItem, () => Look());
-            }
-            else if (locationItem.InteractionResponses.ContainsKey("examine"))
-            {
-                _gameText.DisplayMessage(locationItem.InteractionResponses["examine"]);
+                HandleDialogueOptions(matchedItem);
             }
             else
             {
-                _gameText.DisplayMessage(locationItem.Description);
+                _game.GetDialogueHandler().HandleDialogue(matchedItem, () => Look());
             }
+        }
+        else if (matchedItem.InteractionResponses.ContainsKey("examine"))
+        {
+            _gameText.DisplayMessage(matchedItem.InteractionResponses["examine"]);
         }
         else
         {
-            _gameText.DisplayMessage($"You don't see a {itemName} here.");
+            _gameText.DisplayMessage(matchedItem.Description);
         }
     }
 
@@ -175,30 +208,33 @@ public class CommandProcessor
 
     private void Take(string itemName)
     {
-        var item = _player.CurrentLocation.Items.FirstOrDefault(i => i.Name.ToLower() == itemName.ToLower());
-        if (item != null)
+        var locationItems = _player.CurrentLocation.Items;
+    
+        var matchedItem = _itemMatcher.MatchItem(itemName, locationItems);
+    
+        if (matchedItem == null)
         {
-            if (item.CanTake)
+            _gameText.DisplayMessage($"You don't see a {itemName} here.");
+            return;
+        }
+    
+        if (matchedItem.CanTake)
+        {
+            if (matchedItem.InteractionResponses.ContainsKey("take"))
             {
-                if (item.InteractionResponses.ContainsKey("take"))
-                {
-                    _gameText.DisplayMessage(item.InteractionResponses["take"]);
-                }
-                else
-                {
-                    _gameText.DisplayMessage($"You take the {item.Name}.");
-                }
-                _player.Inventory.Add(item);
-                _player.CurrentLocation.Items.Remove(item);
+                _gameText.DisplayMessage(matchedItem.InteractionResponses["take"]);
             }
             else
             {
-                _gameText.DisplayMessage($"You can't take the {item.Name}.");
+                _gameText.DisplayMessage($"You take the {matchedItem.Name}.");
             }
+        
+            _player.Inventory.Add(matchedItem);
+            _player.CurrentLocation.Items.Remove(matchedItem);
         }
         else
         {
-            _gameText.DisplayMessage($"You don't see a {itemName} here.");
+            _gameText.DisplayMessage($"You can't take the {matchedItem.Name}.");
         }
     }
 
@@ -219,35 +255,38 @@ public class CommandProcessor
 
     private void Use(string itemName)
     {
-        var inventoryItem = _player.Inventory.FirstOrDefault(i => i.Name.ToLower() == itemName.ToLower());
-        if (inventoryItem != null)
+        var availableItems = _player.Inventory
+            .Concat(_player.CurrentLocation.Items)
+            .ToList();
+    
+        var matchedItem = _itemMatcher.MatchItem(itemName, availableItems);
+    
+        if (matchedItem == null)
         {
-            if (inventoryItem.InteractionResponses.ContainsKey("use"))
-            {
-                _gameText.DisplayMessage(inventoryItem.InteractionResponses["use"]);
-            }
-            else
-            {
-                _gameText.DisplayMessage($"You're not sure how to use the {inventoryItem.Name}.");
-            }
+            _gameText.DisplayMessage($"You don't see a {itemName} here.");
             return;
         }
-
-        var locationItem = _player.CurrentLocation.Items.FirstOrDefault(i => i.Name.ToLower() == itemName.ToLower());
-        if (locationItem != null)
+    
+        bool inInventory = _player.Inventory.Contains(matchedItem);
+    
+        if (matchedItem.InteractionResponses.ContainsKey("use"))
         {
-            if (locationItem.InteractionResponses.ContainsKey("use"))
+            _gameText.DisplayMessage(matchedItem.InteractionResponses["use"]);
+        }
+        else if (matchedItem.HasDialogueChoices)
+        {
+            if (inInventory)
             {
-                _gameText.DisplayMessage(locationItem.InteractionResponses["use"]);
+                HandleDialogueOptions(matchedItem);
             }
             else
             {
-                _gameText.DisplayMessage($"You're not sure how to use the {locationItem.Name}.");
+                _game.GetDialogueHandler().HandleDialogue(matchedItem, () => Look());
             }
         }
         else
         {
-            _gameText.DisplayMessage($"You don't see a {itemName} here.");
+            _gameText.DisplayMessage($"You're not sure how to use the {matchedItem.Name}.");
         }
     }
 
@@ -263,5 +302,7 @@ public class CommandProcessor
         _gameText.DisplayMessage("- status: Check your health and morale");
         _gameText.DisplayMessage("- help: Show this help message");
         _gameText.DisplayMessage("- quit: End the game");
+        _gameText.DisplayMessage("- This game uses fuzzy matching for your inputs. \n " +
+                                 "There are some synonyms available for the commands.");
     }
 }
