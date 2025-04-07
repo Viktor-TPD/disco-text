@@ -7,7 +7,7 @@ public class GameText
     {
         Console.ForegroundColor = ConsoleColor.Yellow;
         Console.WriteLine("======================================");
-        Console.WriteLine("         DISCO ELYSIUM ROOM           ");
+        Console.WriteLine("    Monday Morning. 07:14 AM          ");
         Console.WriteLine("======================================");
         Console.ResetColor();
         Console.WriteLine();
@@ -16,7 +16,31 @@ public class GameText
         Console.WriteLine("This must be the mother of all hangovers...");
         Console.WriteLine();
     }
-
+    public void DisplayHealthDeath()
+    {
+        Console.WriteLine("A taste of iron coats your mouth. Your chest hurts.");
+        Console.WriteLine("The world turns dark.");
+        Console.WriteLine();
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine("======================================");
+        Console.WriteLine("             GAME OVER                ");
+        Console.WriteLine("     You died of a heart attack       ");
+        Console.WriteLine("======================================");
+        Console.ResetColor();
+    }
+    public void DisplayMoraleDeath()
+    {
+        Console.WriteLine("The world spins around you. The ground hits your knees as you fall.");
+        Console.WriteLine("You never wanted to be a cop anyway.");
+        Console.WriteLine();
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine("======================================");
+        Console.WriteLine("             GAME OVER                ");
+        Console.WriteLine("      You never leave the room        ");
+        Console.WriteLine("======================================");
+        Console.ResetColor();
+         
+    }
     public void DisplayOutro()
     {
         Console.WriteLine();
@@ -82,7 +106,7 @@ public class GameText
         string bar = "[";
         for (int i = 0; i < max; i++)
         {
-            bar += i < value ? "■" : "□";
+            bar += i < value ? "■" : "x";
         }
 
         bar += "]";

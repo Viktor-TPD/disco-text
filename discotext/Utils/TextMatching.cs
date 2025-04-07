@@ -3,6 +3,7 @@ namespace discotext.Utils;
 
 public static class TextMatching
 {
+    // Borrowed (mostly) from https://gist.github.com/Davidblkx/e12ab0bb2aff7fd8072632b396538560
     public static int LevenshteinDistance(string source, string target)
     {
         if (string.IsNullOrEmpty(source)) 

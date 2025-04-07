@@ -51,15 +51,23 @@ namespace discotext.Core
                 Console.Write("> ");
                 string input = Console.ReadLine().ToLower();
 
-                if (input == "quit" || input == "exit")
+                if (input == "quit" || input == "exit" || _player.Health <= 0 || _player.Morale <= 0)
                 {
                     _isRunning = false;
                     continue;
                 }
-
+                
                 _commandProcessor.ProcessCommand(input);
+                
+                if (_player.Health <= 0)
+                {
+                     _gameText.DisplayHealthDeath();
+                }
+                if (_player.Morale <= 0)
+                {
+                    _gameText.DisplayMoraleDeath();
+                }
             }
-
             _gameText.DisplayOutro();
         }
 

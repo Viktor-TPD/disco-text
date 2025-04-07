@@ -13,23 +13,27 @@ public class ItemMatcher
     public Models.Item MatchItem(string itemName, IEnumerable<Models.Item> availableItems)
     {
         if (string.IsNullOrWhiteSpace(itemName) || !availableItems.Any())
+        {
             return null;
-
+        }
         string normalizedInput = itemName.ToLower().Trim();
             
         var exactMatch = availableItems.FirstOrDefault(i => 
             i.Name.ToLower() == normalizedInput);
             
         if (exactMatch != null)
+        {
             return exactMatch;
-
+        }
         var bestMatches = new List<(Models.Item Item, int Distance)>();
             
         foreach (var item in availableItems)
         {
             int distance = TextMatching.LevenshteinDistance(normalizedInput, item.Name.ToLower());
             if (distance <= _maxDistanceThreshold)
+            {
                 bestMatches.Add((item, distance));
+            }
         }
 
         if (bestMatches.Count > 0)
