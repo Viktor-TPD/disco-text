@@ -1,13 +1,16 @@
+using discotext.Core;
 using discotext.Models;
 namespace discotext.Utils;
 
 public class DialogueHandler
 {
     private GameText _gameText;
+    private Game _game;
         
-    public DialogueHandler(GameText gameText)
+    public DialogueHandler(GameText gameText, Game game)
     {
         _gameText = gameText;
+        _game = game;
     }
         
     public void HandleDialogue(Item item, Action onExit = null)
@@ -50,6 +53,20 @@ public class DialogueHandler
                         _gameText.DisplayMessage(selectedOption.Response);
                         selectedOption.Effect?.Invoke();
                         
+                        var player = _game.GetPlayer();  // You'll need to add a reference to the game here
+                        if (player.Health <= 0)
+                        {
+                            _gameText.DisplayHealthDeath();
+                            _game.EndGame();
+                            return;  // Exit the dialogue loop
+                        }
+                        else if (player.Morale <= 0)
+                        {
+                            _gameText.DisplayMoraleDeath();
+                            _game.EndGame();
+                            return;  // Exit the dialogue loop
+                        }
+
                         _gameText.DisplayMessage("\nPress any key to continue...");
                         Console.ReadKey(true);
                         Console.Clear();

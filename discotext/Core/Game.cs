@@ -16,11 +16,13 @@ namespace discotext.Core
         public Game()
         {
             _gameText = new GameText();
-            _dialogueHandler = new DialogueHandler(_gameText);
+            _dialogueHandler = new DialogueHandler(_gameText, null);
             
             InitializeGameWorld();
             
             _commandProcessor = new CommandProcessor(this);
+            
+            _dialogueHandler = new DialogueHandler(_gameText, this);
             
             _isRunning = false;
         }

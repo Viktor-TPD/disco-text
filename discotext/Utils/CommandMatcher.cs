@@ -26,7 +26,6 @@ public class CommandMatcher
             // Flavour
             { "die", new HashSet<string> { "concede", "suicide", "end it all", "kill myself", "give up", "surrender" } },
             { "dance", new HashSet<string> { "boogie", "groove", "bust a move", "disco" } },
-            { "sing", new HashSet<string> { "karaoke", "perform", "belt out", "serenade" } },
             { "scream", new HashSet<string> { "yell", "shout", "cry out", "howl" } }
         };
     }

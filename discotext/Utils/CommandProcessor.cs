@@ -1,3 +1,4 @@
+using System.Reflection.Metadata.Ecma335;
 using discotext.Core;
 using discotext.Models;
 
@@ -91,12 +92,20 @@ public class CommandProcessor
             case "status":
                 _gameText.DisplayPlayerStatus(_player);
                 break;
-            case "die":
-                Die();
-                break;
             case "help":
                 ShowHelp();
                 break;
+            
+                // "Joke Commands" - no game mechanic attached, just to satisfy player curiosity
+                case "die":
+                    Die();
+                    break;
+                case "dance":
+                    Dance();
+                    break;
+                case "scream":
+                    Scream();
+                    break;
             default:
                 _gameText.DisplayMessage("I don't understand that command. Type 'help' for a list of commands.");
                 break;
@@ -208,6 +217,19 @@ public class CommandProcessor
                         Console.Clear();
                         _gameText.DisplayMessage(selectedOption.Response);
                         selectedOption.Effect?.Invoke();
+                        
+                        if (_player.Health <= 0)
+                        {
+                            _gameText.DisplayHealthDeath();
+                            _game.EndGame();
+                            return;  
+                        }
+                        if (_player.Morale <= 0)
+                        {
+                            _gameText.DisplayMoraleDeath();
+                            _game.EndGame();
+                            return; 
+                        }
                     
                         _gameText.DisplayMessage("\nPress any key to continue...");
                         Console.ReadKey(true);
@@ -305,6 +327,16 @@ public class CommandProcessor
     {
         _gameText.DisplayMessage("It's not worth it.");
         _player.Health = 0;
+    }
+
+    private void Dance()
+    {
+        _gameText.DisplayMessage("You do a little jig.");
+    }
+
+    private void Scream()
+    {
+        _gameText.DisplayMessage("You gather ");
     }
 
     private void ShowHelp()
