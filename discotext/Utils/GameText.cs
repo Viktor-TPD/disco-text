@@ -18,28 +18,25 @@ public class GameText
     }
     public void DisplayHealthDeath()
     {
-        Console.WriteLine("A taste of iron coats your mouth. Your chest hurts.");
-        Console.WriteLine("The world turns dark.");
         Console.WriteLine();
         Console.ForegroundColor = ConsoleColor.Yellow;
         Console.WriteLine("======================================");
-        Console.WriteLine("             GAME OVER                ");
         Console.WriteLine("     You died of a heart attack       ");
         Console.WriteLine("======================================");
         Console.ResetColor();
+        Console.WriteLine("A taste of iron coats your mouth. Your chest hurts.");
+        Console.WriteLine("The world turns dark.");
     }
     public void DisplayMoraleDeath()
     {
-        Console.WriteLine("The world spins around you. The ground hits your knees as you fall.");
-        Console.WriteLine("You never wanted to be a cop anyway.");
         Console.WriteLine();
         Console.ForegroundColor = ConsoleColor.Yellow;
         Console.WriteLine("======================================");
-        Console.WriteLine("             GAME OVER                ");
-        Console.WriteLine("      You never leave the room        ");
+        Console.WriteLine("     You've lost all motivation       ");
         Console.WriteLine("======================================");
         Console.ResetColor();
-         
+        Console.WriteLine("The world spins around you. The ground hits your knees as you fall.");
+        Console.WriteLine("You never wanted to be a cop anyway.");  
     }
     public void DisplayOutro()
     {

@@ -14,7 +14,8 @@ namespace discotext.Models
         public string Description { get; set; }
         public bool CanTake { get; set; }
         public ItemType Type { get; set; }
-        public bool IsOn { get; set; } = true; // For ceiling fan
+        public bool IsOn { get; set; } = true;
+        public bool HasTie { get; set; } = true;
         public Dictionary<string, string> InteractionResponses { get; set; }
         public List<DialogueOption> DialogueOptions { get; set; }
         public bool HasDialogueChoices => DialogueOptions != null && DialogueOptions.Count > 0;

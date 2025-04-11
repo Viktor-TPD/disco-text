@@ -62,10 +62,14 @@ namespace discotext.Core
                 if (_player.Health <= 0)
                 {
                      _gameText.DisplayHealthDeath();
+                     _isRunning = false;
+                     continue;
                 }
                 if (_player.Morale <= 0)
                 {
                     _gameText.DisplayMoraleDeath();
+                    _isRunning = false;
+                    continue;
                 }
             }
             _gameText.DisplayOutro();

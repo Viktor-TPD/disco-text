@@ -104,49 +104,94 @@ public class ItemFactory
         ledger.InteractionResponses["take"] = "You pocket the ledger. Might be useful.";
         return ledger;
     }
-
+    
     private Item CreateCeilingFan()
     {
-        var ceilingFan = new Item("ceiling fan", "An old ceiling fan spinning slowly. It creaks with each rotation.", false);
-        ceilingFan.DialogueOptions.Add(new DialogueOption(
-            "Try to jump and grab it", 
-            "You leap upward, but the fan is too high. Your headache worsens with the sudden movement.",
-            () => { 
-                _player.Health--; 
-                _gameText.DisplayMessage("Your headache intensifies. That wasn't a good idea."); 
-            }
-        ));
-        ceilingFan.DialogueOptions.Add(new DialogueOption(
-            "Watch the hypnotic spinning", 
-            "You stare at the fan, entranced by its rhythmic movement. A strange thought comes to you: 'What kind of cop are you?'",
-            null
-        ));
-        ceilingFan.DialogueOptions.Add(new DialogueOption(
-            "Look for the switch to turn it off", 
-            "You spot a pull-chain, but it's broken. The fan seems destined to keep spinning, much like your thoughts.",
-            null
-        ));
-        ceilingFan.DialogueOptions.Add(new DialogueOption(
-            "Try to turn it off", 
-            "You reach up and pull the chain. After a few stuttering rotations, the fan comes to a stop.",
-            () => { 
-                ceilingFan.IsOn = false;
-                ceilingFan.Description = "An old ceiling fan, now motionless. A pull chain dangles below it.";
-                // Add a new dialogue option to turn it back on
+    var ceilingFan = new Item("ceiling fan", "An old ceiling fan spinning slowly. It creaks with each rotation.\nA necktie dangles from one of the blades.", false);
+    ceilingFan.IsOn = true;
+    ceilingFan.HasTie = true;
+
+    Action<bool> updateFanState = null;
+    updateFanState = (bool isOn) => {
+        ceilingFan.IsOn = isOn;
+        
+        ceilingFan.DialogueOptions.Clear();
+        
+        if (isOn)
+        {
+            ceilingFan.Description = ceilingFan.HasTie
+                ? "An old ceiling fan spinning slowly. It creaks with each rotation.\nA garish orange-and-blue necktie dangles from one of the blades."
+                : "An old ceiling fan spinning slowly. It creaks with each rotation.";
+            
+            if (ceilingFan.HasTie)
+            {
                 ceilingFan.DialogueOptions.Add(new DialogueOption(
-                    "Turn it back on",
-                    "You pull the chain again. The fan reluctantly starts spinning with a creaking sound.",
-                    () => {
-                        ceilingFan.IsOn = true;
-                        ceilingFan.Description = "An old ceiling fan spinning slowly. It creaks with each rotation.";
-                        // Remove the "Turn it back on" option (last option added)
-                        ceilingFan.DialogueOptions.RemoveAt(ceilingFan.DialogueOptions.Count - 1);
+                    "Try to grab the necktie", 
+                    "You leap upward, trying to grab the necktie, but the spinning blades smack your hand hard. Your headache worsens with the sudden movement and pain.",
+                    () => { 
+                        _player.Health--; 
+                        _gameText.DisplayMessage("Your headache intensifies and your hand stings. That wasn't a good idea."); 
                     }
                 ));
-                // Optional: Remove the "Turn it off" option if you don't want it to appear again
-                ceilingFan.DialogueOptions.Remove(ceilingFan.DialogueOptions.First(o => o.Text == "Try to turn it off"));
             }
-        ));
-        return ceilingFan;
+            
+            ceilingFan.DialogueOptions.Add(new DialogueOption(
+                "Watch the hypnotic spinning", 
+                "You stare at the fan, entranced by its rhythmic movement. A strange thought comes to you: 'What kind of cop are you?'",
+                null
+            ));
+            
+            ceilingFan.DialogueOptions.Add(new DialogueOption(
+                "Turn it off", 
+                "You reach up and pull the chain. After a few stuttering rotations, the fan comes to a stop.",
+                () => { 
+                    updateFanState(false);
+                }
+            ));
+        }
+        else
+        {
+            ceilingFan.Description = ceilingFan.HasTie
+                ? "An old ceiling fan, now motionless. A pull chain dangles below it.\nA garish orange-and-blue necktie hangs from one of the blades, now within reach."
+                : "An old ceiling fan, now motionless. A pull chain dangles below it.";
+            
+            if (ceilingFan.HasTie)
+            {
+                ceilingFan.DialogueOptions.Add(new DialogueOption(
+                    "Grab the necktie", 
+                    "With the fan stopped, you easily grab the necktie from the blade. It feels warm, almost alive in your hands.",
+                    () => { 
+                        var necktie = CreateNecktie();
+                        _player.Inventory.Add(necktie);
+                        _gameText.DisplayMessage("You take the necktie. It feels warm, almost alive in your hands.");
+                        
+                        ceilingFan.HasTie = false;
+                        
+                        updateFanState(false);
+                    }
+                ));
+            }
+            
+            ceilingFan.DialogueOptions.Add(new DialogueOption(
+                "Inspect the motionless fan", 
+                "Without the whirring blades, you can see the fan is old and dusty." + 
+                (ceilingFan.HasTie ? " The necktie seems oddly out of place here." : ""),
+                null
+            ));
+            
+            ceilingFan.DialogueOptions.Add(new DialogueOption(
+                "Turn it back on", 
+                "You pull the chain again. The fan reluctantly starts spinning with a creaking sound.",
+                () => {
+                    updateFanState(true);
+                }
+            ));
+        }
+    };
+
+    updateFanState(true);
+
+    return ceilingFan;
     }
+ 
 }

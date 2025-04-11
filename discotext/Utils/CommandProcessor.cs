@@ -91,6 +91,9 @@ public class CommandProcessor
             case "status":
                 _gameText.DisplayPlayerStatus(_player);
                 break;
+            case "die":
+                Die();
+                break;
             case "help":
                 ShowHelp();
                 break;
@@ -298,6 +301,12 @@ public class CommandProcessor
         }
     }
 
+    private void Die()
+    {
+        _gameText.DisplayMessage("It's not worth it.");
+        _player.Health = 0;
+    }
+
     private void ShowHelp()
     {
         _gameText.DisplayMessage("Available commands:");
@@ -311,6 +320,6 @@ public class CommandProcessor
         _gameText.DisplayMessage("- help: Show this help message");
         _gameText.DisplayMessage("- quit: End the game");
         _gameText.DisplayMessage("- This game uses fuzzy matching for your inputs. \n " +
-                                 "There are some synonyms available for the commands.");
+                                 "There are some synonyms available for all commands.");
     }
 }
