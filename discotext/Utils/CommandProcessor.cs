@@ -398,7 +398,7 @@ public class CommandProcessor
 
     private void Scream()
     {
-        _gameText.DisplayMessage("You gather ");
+        _gameText.DisplayMessage("You gather air into your lungs and release a primal scream. It feels good.");
     }
 
     private void ShowHelp()
