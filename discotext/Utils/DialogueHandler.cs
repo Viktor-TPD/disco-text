@@ -1,11 +1,12 @@
-using discotext.Core;
 using discotext.Models;
+using discotext.Core;
 namespace discotext.Utils;
 
 public class DialogueHandler
 {
     private GameText _gameText;
     private Game _game;
+    private bool _exitDialogueAfterEffect = false;
         
     public DialogueHandler(GameText gameText, Game game)
     {
@@ -44,6 +45,7 @@ public class DialogueHandler
                         exitDialogue = true;
                         Console.Clear();
                         _gameText.DisplayMessage("You stop examining the " + item.Name + ".");
+                        
                         onExit?.Invoke();
                     }
                     else
@@ -51,22 +53,28 @@ public class DialogueHandler
                         DialogueOption selectedOption = item.DialogueOptions[selectedIndex];
                         Console.Clear();
                         _gameText.DisplayMessage(selectedOption.Response);
+                        
+                        _exitDialogueAfterEffect = false;
+                        
                         selectedOption.Effect?.Invoke();
                         
-                        var player = _game.GetPlayer();  // You'll need to add a reference to the game here
-                        if (player.Health <= 0)
+                        if (_exitDialogueAfterEffect)
                         {
-                            _gameText.DisplayHealthDeath();
-                            _game.EndGame();
-                            return;  // Exit the dialogue loop
+                            exitDialogue = true;
+                            onExit?.Invoke();
+                            continue;
                         }
-                        else if (player.Morale <= 0)
+                        
+                        if (_game != null)
                         {
-                            _gameText.DisplayMoraleDeath();
-                            _game.EndGame();
-                            return;  // Exit the dialogue loop
+                            var player = _game.GetPlayer();
+                            if (player.Health <= 0 || player.Morale <= 0)
+                            {
+                                exitDialogue = true;
+                                continue;
+                            }
                         }
-
+                        
                         _gameText.DisplayMessage("\nPress any key to continue...");
                         Console.ReadKey(true);
                         Console.Clear();
@@ -74,5 +82,10 @@ public class DialogueHandler
                     break;
             }
         }
+    }
+    
+    public void ExitDialogueAfterEffect()
+    {
+        _exitDialogueAfterEffect = true;
     }
 }

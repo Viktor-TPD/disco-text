@@ -1,13 +1,14 @@
-
 namespace discotext.Models
 {
     public enum ItemType
     {
-        Normal,   // Standard items
-        Key,      // Items that unlock things
-        Special,  // Items with unique properties
-        Note      // Written information
+        Normal,  
+        Key,     
+        Clothing  
     }
+    
+    public delegate void DialogueActionHandler();
+    
     public class Item
     {
         public string Name { get; set; }
@@ -16,9 +17,13 @@ namespace discotext.Models
         public ItemType Type { get; set; }
         public bool IsOn { get; set; } = true;
         public bool HasTie { get; set; } = true;
+        public bool IsWorn { get; set; } = false;
         public Dictionary<string, string> InteractionResponses { get; set; }
         public List<DialogueOption> DialogueOptions { get; set; }
         public bool HasDialogueChoices => DialogueOptions != null && DialogueOptions.Count > 0;
+        
+        public DialogueActionHandler ExitDialogueHandler { get; set; }
+        public DialogueActionHandler LookHandler { get; set; }
 
         public Item(string name, string description, bool canTake = true, ItemType type = ItemType.Normal)
         {
@@ -44,6 +49,4 @@ namespace discotext.Models
             Effect = effect;
         }
     }
-
-   
 }

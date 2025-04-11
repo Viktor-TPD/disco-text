@@ -10,6 +10,7 @@ public class CommandProcessor
     private GameText _gameText;
     private CommandMatcher _commandMatcher;
     private ItemMatcher _itemMatcher;
+    private bool _exitDialogueAfterEffect = false;
     
     public CommandProcessor(Game game)
     {
@@ -18,6 +19,11 @@ public class CommandProcessor
         _gameText = game.GetGameText();
         _commandMatcher = new CommandMatcher(_gameText);
         _itemMatcher = new ItemMatcher(_gameText);
+    }
+    
+    public void ExitDialogueAfterEffect()
+    {
+        _exitDialogueAfterEffect = true;
     }
 
     public void ProcessCommand(string input)
@@ -112,7 +118,7 @@ public class CommandProcessor
         }
     }
 
-    private void Look()
+    public void Look()
     {
         _gameText.DisplayLocationDescription(_player.CurrentLocation);
     }
@@ -147,7 +153,6 @@ public class CommandProcessor
     
         _gameText.DisplayMessage($"You can't go {direction} from here.");
     }
-
     private void Examine(string itemName)
     {
         var availableItems = _player.Inventory
@@ -163,6 +168,37 @@ public class CommandProcessor
         }
 
         var inventoryItem = _player.Inventory.Contains(matchedItem);
+
+        if (matchedItem.Name == "second shoe" && inventoryItem && _player.CurrentLocation.Name == "By the Window")
+        {
+            bool hasThrowOption = matchedItem.DialogueOptions.Any(option => option.Text == "Throw it back out the window");
+            
+            if (!hasThrowOption)
+            {
+                matchedItem.DialogueOptions.Add(new DialogueOption(
+                    "Throw it back out the window",
+                    "You toss the shoe back out the window in frustration. Now you have to go get it again. Brilliant move.",
+                    () =>
+                    {
+                        _player.Morale--;
+                        _gameText.DisplayMessage("You immediately regret your impulsive decision. Your morale decreases.");
+                        _player.Inventory.Remove(matchedItem);
+                        _player.CurrentLocation.Items.Add(matchedItem);
+
+                        _gameText.DisplayMessage("\nPress any key to continue...");
+                        Console.ReadKey(true);
+                        Console.Clear();
+                        
+                        ExitDialogueAfterEffect();
+                        Look();
+                    }
+                ));
+            }
+        }
+        else if (matchedItem.Name == "second shoe" && inventoryItem && _player.CurrentLocation.Name != "By the Window")
+        {
+            matchedItem.DialogueOptions.RemoveAll(option => option.Text == "Throw it back out the window");
+        }
 
         if (matchedItem.HasDialogueChoices)
         {
@@ -184,61 +220,72 @@ public class CommandProcessor
             _gameText.DisplayMessage(matchedItem.Description);
         }
     }
-
     private void HandleDialogueOptions(Item item)
-    {
-        int selectedIndex = 0;
-        bool exitDialogue = false;
-        int totalOptions = item.DialogueOptions.Count + 1; // +1 for exit option
+{
+    int selectedIndex = 0;
+    bool exitDialogue = false;
     
-        while (!exitDialogue)
-        {
-            _gameText.DisplayInventoryDialogueOptions(item, selectedIndex);
+    while (!exitDialogue)
+    {
+        int totalOptions = item.DialogueOptions.Count + 1;
         
-            var key = Console.ReadKey(true).Key;
-            switch (key)
-            {
-                case ConsoleKey.UpArrow:
-                case ConsoleKey.W:
-                    selectedIndex = (selectedIndex - 1 + totalOptions) % totalOptions;
-                    break;
-                case ConsoleKey.DownArrow:
-                case ConsoleKey.S:
-                    selectedIndex = (selectedIndex + 1) % totalOptions;
-                    break;
-                case ConsoleKey.Enter:
-                    if (selectedIndex == item.DialogueOptions.Count)
+        _gameText.DisplayInventoryDialogueOptions(item, selectedIndex);
+        
+        var key = Console.ReadKey(true).Key;
+        switch (key)
+        {
+            case ConsoleKey.UpArrow:
+            case ConsoleKey.W:
+                selectedIndex = (selectedIndex - 1 + totalOptions) % totalOptions;
+                break;
+            case ConsoleKey.DownArrow:
+            case ConsoleKey.S:
+                selectedIndex = (selectedIndex + 1) % totalOptions;
+                break;
+            case ConsoleKey.Enter:
+                if (selectedIndex == item.DialogueOptions.Count)
+                {
+                    exitDialogue = true;
+                    Console.Clear();
+                    
+                    Look();
+                }
+                else
+                {
+                    DialogueOption selectedOption = item.DialogueOptions[selectedIndex];
+                    Console.Clear();
+                    _gameText.DisplayMessage(selectedOption.Response);
+                    
+                    _exitDialogueAfterEffect = false;
+                    
+                    selectedOption.Effect?.Invoke();
+                    
+                    if (_exitDialogueAfterEffect)
                     {
                         exitDialogue = true;
+                        continue;
                     }
-                    else
-                    {
-                        DialogueOption selectedOption = item.DialogueOptions[selectedIndex];
-                        Console.Clear();
-                        _gameText.DisplayMessage(selectedOption.Response);
-                        selectedOption.Effect?.Invoke();
-                        
-                        if (_player.Health <= 0)
-                        {
-                            _gameText.DisplayHealthDeath();
-                            _game.EndGame();
-                            return;  
-                        }
-                        if (_player.Morale <= 0)
-                        {
-                            _gameText.DisplayMoraleDeath();
-                            _game.EndGame();
-                            return; 
-                        }
                     
-                        _gameText.DisplayMessage("\nPress any key to continue...");
-                        Console.ReadKey(true);
-                        Console.Clear();
+                    if (_player.Health <= 0)
+                    {
+                        exitDialogue = true;
+                        return;
                     }
-                    break;
-            }
+                    if (_player.Morale <= 0)
+                    {
+                        
+                        exitDialogue = true;
+                        return; 
+                    }
+                    
+                    _gameText.DisplayMessage("\nPress any key to continue...");
+                    Console.ReadKey(true);
+                    Console.Clear();
+                }
+                break;
         }
-    } 
+    }
+}
     private void Take(string itemName)
     {
         var locationItems = _player.CurrentLocation.Items;
@@ -278,12 +325,27 @@ public class CommandProcessor
             _gameText.DisplayMessage("You're not carrying anything.");
             return;
         }
-
-        _gameText.DisplayMessage("You are carrying:");
-        foreach (var item in _player.Inventory)
+        
+        var wornItems = _player.Inventory.Where(item => item.IsWorn).ToList();
+        if (wornItems.Any())
         {
-            _gameText.DisplayMessage($"- {item.Name}: {item.Description}");
+            _gameText.DisplayMessage("You are wearing:");
+            foreach (var item in wornItems)
+            {
+                _gameText.DisplayMessage($"- {item.Name}");
+            }
+            _gameText.DisplayMessage("");
         }
+
+        var carriedItems = _player.Inventory.Where(item => !item.IsWorn).ToList();
+        if (carriedItems.Any())
+        {
+            _gameText.DisplayMessage("You are carrying:");
+            foreach (var item in carriedItems)
+            {
+                _gameText.DisplayMessage($"- {item.Name}: {item.Description}");
+            }
+        } 
     }
 
     private void Use(string itemName)

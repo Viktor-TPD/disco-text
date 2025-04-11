@@ -12,7 +12,7 @@ namespace discotext.Core
         private CommandProcessor _commandProcessor;
         private GameText _gameText;
         private DialogueHandler _dialogueHandler;
-
+        bool deathDisplayed = false;
         public Game()
         {
             _gameText = new GameText();
@@ -24,21 +24,26 @@ namespace discotext.Core
             
             _dialogueHandler = new DialogueHandler(_gameText, this);
             
+            InitializeGameWorld();
+            
             _isRunning = false;
         }
         
         private void InitializeGameWorld()
         {
-            _items = new ItemFactory(null, _gameText).CreateAllItems();
+            if (_commandProcessor == null)
+            {
+                _items = new ItemFactory(null, _gameText).CreateAllItems();
+                _locations = new LocationFactory(_items).CreateLocations();
+                _player = new Player(_locations["CenterOfRoom"]);
+                return;
+            }
             
+            DialogueActionHandler exitDialogueHandler = () => _commandProcessor.ExitDialogueAfterEffect();
+            DialogueActionHandler lookHandler = () => _commandProcessor.Look();
+            
+            _items = new ItemFactory(_player, _gameText, this, exitDialogueHandler, lookHandler).CreateAllItems();
             _locations = new LocationFactory(_items).CreateLocations();
-            
-            _player = new Player(_locations["CenterOfRoom"]);
-            
-            _items = new ItemFactory(_player, _gameText).CreateAllItems();
-            
-            _locations = new LocationFactory(_items).CreateLocations();
-            
             _player.CurrentLocation = _locations["CenterOfRoom"];
         }
 
@@ -64,12 +69,14 @@ namespace discotext.Core
                 if (_player.Health <= 0)
                 {
                      _gameText.DisplayHealthDeath();
+                     deathDisplayed = true;
                      _isRunning = false;
                      continue;
                 }
                 if (_player.Morale <= 0)
                 {
                     _gameText.DisplayMoraleDeath();
+                    deathDisplayed = true;
                     _isRunning = false;
                     continue;
                 }

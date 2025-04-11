@@ -151,7 +151,6 @@ public class GameText
             Console.ResetColor();
         }
     }
-    
     public void DisplayInventoryDialogueOptions(Item item, int selectedIndex)
     {
         Console.Clear();
@@ -189,5 +188,5 @@ public class GameText
     
         Console.WriteLine("Exit dialogue");
         Console.ResetColor();
-    } 
+    }
 }
